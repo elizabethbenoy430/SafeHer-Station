@@ -4,36 +4,27 @@ class StationEditProfile extends StatefulWidget {
   const StationEditProfile({super.key});
 
   @override
-  State<StationEditProfile> createState() =>
-      _StationEditProfileState();
+  State<StationEditProfile> createState() => _StationEditProfileState();
 }
 
 class _StationEditProfileState extends State<StationEditProfile> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController nameController =
-      TextEditingController();
-  final TextEditingController emailController =
-      TextEditingController();
-  final TextEditingController contactController =
-      TextEditingController();
-  final TextEditingController addressController =
-      TextEditingController();
-  final TextEditingController latitudeController =
-      TextEditingController();
-  final TextEditingController longitudeController =
-      TextEditingController();
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController contactController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
+  final TextEditingController latitudeController = TextEditingController();
+  final TextEditingController longitudeController = TextEditingController();
 
   InputDecoration _inputStyle(String hint, {IconData? icon}) {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: Colors.grey),
-      prefixIcon:
-          icon != null ? Icon(icon, color: Colors.grey) : null,
+      prefixIcon: icon != null ? Icon(icon, color: Colors.grey) : null,
       filled: true,
       fillColor: const Color(0xFF1E1E1E),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(30),
         borderSide: BorderSide.none,
@@ -61,6 +52,7 @@ class _StationEditProfileState extends State<StationEditProfile> {
     addressController.dispose();
     latitudeController.dispose();
     longitudeController.dispose();
+
     super.dispose();
   }
 
@@ -72,23 +64,19 @@ class _StationEditProfileState extends State<StationEditProfile> {
         backgroundColor: Colors.black,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios,
-              color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           "Edit Station Profile",
-          style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
       ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -100,7 +88,6 @@ class _StationEditProfileState extends State<StationEditProfile> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-
                     // 👮 POLICE STATION ICON
                     Container(
                       height: 90,
@@ -131,10 +118,7 @@ class _StationEditProfileState extends State<StationEditProfile> {
 
                     const Text(
                       "Edit your police station information below",
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: Colors.grey, fontSize: 13),
                       textAlign: TextAlign.center,
                     ),
 
@@ -172,8 +156,8 @@ class _StationEditProfileState extends State<StationEditProfile> {
                           return "Email is required";
                         }
                         if (!RegExp(
-                                r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$')
-                            .hasMatch(value)) {
+                          r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$',
+                        ).hasMatch(value)) {
                           return "Enter a valid email";
                         }
                         return null;
@@ -227,8 +211,9 @@ class _StationEditProfileState extends State<StationEditProfile> {
                     TextFormField(
                       controller: latitudeController,
                       style: const TextStyle(color: Colors.white),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: _inputStyle(
                         "Latitude",
                         icon: Icons.my_location,
@@ -247,12 +232,10 @@ class _StationEditProfileState extends State<StationEditProfile> {
                     TextFormField(
                       controller: longitudeController,
                       style: const TextStyle(color: Colors.white),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      decoration: _inputStyle(
-                        "Longitude",
-                        icon: Icons.explore,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
                       ),
+                      decoration: _inputStyle("Longitude", icon: Icons.explore),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return "Longitude required";
@@ -260,7 +243,6 @@ class _StationEditProfileState extends State<StationEditProfile> {
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 35),
 
                     // UPDATE BUTTON

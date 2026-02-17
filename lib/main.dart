@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:station_app/homepage.dart';
 
 import 'package:station_app/login.dart';
 import 'package:station_app/stationregistration.dart';
@@ -24,7 +25,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: StationRegistration()
+      home: StationHome()
     );
   }
 }

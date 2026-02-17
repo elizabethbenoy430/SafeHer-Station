@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:station_app/myprofile.dart';
 
 class StationHome extends StatelessWidget {
   const StationHome({super.key});
@@ -110,7 +111,7 @@ class StationHome extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => const StationProfilePage()),
+                      builder: (context) => const StationMyProfile()),
                 );
               },
             ),
