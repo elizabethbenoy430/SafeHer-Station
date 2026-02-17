@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:station_app/login.dart';
+import 'package:station_app/stationregistration.dart';
 
 
 
@@ -12,8 +13,9 @@ Future<void> main() async {
     url: 'https://oaodufxcoxopwdsrpzkb.supabase.co',
     anonKey: 'sb_publishable_sTCfZJCJ5CKRDmKke9omng_ACVqydil',
   );
-  runApp(MyApp());
+  runApp(MainApp());
 }
+final supabase = Supabase.instance.client; 
         
 
 class MainApp extends StatelessWidget {
@@ -22,7 +24,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: StationLoginPage()
+      home: StationRegistration()
     );
   }
 }
