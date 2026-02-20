@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:station_app/main.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'homepage.dart'; // StationHome page
 
 class StationLoginPage extends StatefulWidget {
@@ -14,15 +16,37 @@ class _StationLoginPageState extends State<StationLoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isObscure = true;
 
-  void _login() {
-    if (_formKey.currentState!.validate()) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const StationHome()),
+  Future<void> Login() async {
+    try {
+      final response = await supabase.auth.signInWithPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
       );
+
+      if (response.session != null) {
+        // Successful login
+        print("Login successful: ${response.session?.user.email}");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const StationHome()),
+        );
+      } else {
+        showError("Login failed - No session created");
+      }
+    } catch (e) {
+      print("Login error: $e");
+      if (e is AuthException) {
+        showError(e.message);
+      } else {
+        showError("An unexpected error occurred.");
+      }
     }
   }
-
+    void showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message, style: const TextStyle(color: Colors.white))),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -180,7 +204,7 @@ class _StationLoginPageState extends State<StationLoginPage> {
                             const SizedBox(height: 10),
 
                             // 🔴 Glowing Login Button
-                            AnimatedGlowButton(onTap: _login),
+                            AnimatedGlowButton(onTap: Login),
                           ],
                         ),
                       ),

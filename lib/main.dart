@@ -3,6 +3,7 @@ import 'package:station_app/homepage.dart';
 
 import 'package:station_app/login.dart';
 import 'package:station_app/stationregistration.dart';
+import 'package:station_app/viewcrime.dart';
 
 
 
@@ -25,7 +26,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: StationHome()
+      home: StationLoginPage()
     );
   }
 }

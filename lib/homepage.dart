@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:station_app/myprofile.dart';
+import 'package:station_app/viewcrime.dart';
+import 'package:station_app/login.dart';
+
 
 class StationHome extends StatelessWidget {
   const StationHome({super.key});
@@ -78,14 +81,7 @@ class StationHome extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
-            },
-          ),
-        ),
+
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
@@ -99,79 +95,21 @@ class StationHome extends StatelessWidget {
           ],
         ),
         centerTitle: true,
+
+        // 🔴 LOGOUT BUTTON
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: IconButton(
-              icon: const CircleAvatar(
-                backgroundColor: Color(0xFF1E1E1E),
-                child: Icon(Icons.person, color: Colors.grey),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const StationMyProfile()),
-                );
-              },
-            ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.redAccent),
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const StationLoginPage()),
+                (route) => false,
+              );
+            },
           )
         ],
-      ),
-
-      // 🟢 DRAWER (HAMBURGER MENU)
-      drawer: Drawer(
-        backgroundColor: Colors.black,
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Color(0xFF1E1E1E),
-              ),
-              child: Center(
-                child: Text(
-                  "Station Menu",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home, color: Colors.white),
-              title: const Text("Home", style: TextStyle(color: Colors.white)),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.warning, color: Colors.redAccent),
-              title: const Text("Incoming SOS", style: TextStyle(color: Colors.white)),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.report, color: Colors.white),
-              title: const Text("Complaints", style: TextStyle(color: Colors.white)),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.assessment, color: Colors.white),
-              title: const Text("Statistics", style: TextStyle(color: Colors.white)),
-              onTap: () {},
-            ),
-            ListTile(
-              leading: const Icon(Icons.person, color: Colors.white),
-              title: const Text("Profile", style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const StationProfilePage()),
-                );
-              },
-            ),
-          ],
-        ),
       ),
 
       // 🧍 STATION HOME CONTENT
@@ -183,7 +121,6 @@ class StationHome extends StatelessWidget {
             children: [
               const SizedBox(height: 20),
 
-              // 👋 GREETING
               const Text(
                 "Welcome Station Officer ",
                 style: TextStyle(
@@ -229,17 +166,49 @@ class StationHome extends StatelessWidget {
         ),
       ),
 
-      // 🔽 BOTTOM NAVIGATION
+      // 🔽 BOTTOM NAVIGATION WITH PAGE REDIRECT
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.black,
         selectedItemColor: const Color(0xFF1976D2),
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
+
+        onTap: (index) {
+          if (index == 0) {
+            // Home - do nothing
+          } 
+          else if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const StationHome()),
+            );
+          } 
+          else if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const StationHome()),
+            );
+          } 
+          else if (index == 3) {
+            // ✅ CRIME PAGE
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ViewCrime()),
+            );
+          } 
+          else if (index == 4) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const StationMyProfile()),
+            );
+          }
+        },
+
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.warning), label: "SOS"),
           BottomNavigationBarItem(icon: Icon(Icons.report), label: "Complaints"),
-          BottomNavigationBarItem(icon: Icon(Icons.assessment), label: "Stats"),
+          BottomNavigationBarItem(icon: Icon(Icons.assessment), label: "Crime"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),

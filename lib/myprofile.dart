@@ -21,14 +21,25 @@ class _StationMyProfileState extends State<StationMyProfile> {
     fetchStationDetails();
   }
 
-  // 🔹 FETCH STATION DATA
+  // ================= FETCH STATION DATA ===================
   Future<void> fetchStationDetails() async {
     try {
+      final user = supabase.auth.currentUser;
+
+      print("LOGGED USER ID: ${user?.id}");
+
+      if (user == null) {
+        print("❌ User not logged in");
+        return;
+      }
+
       final response = await supabase
-          .from('tbl_station') // ✅ Correct table name
+          .from('tbl_station')
           .select()
-          .eq('station_id', supabase.auth.currentUser!.id)
-          .single(); // Get only one row
+          .eq('station_id', user.id) // MUST match DB
+          .maybeSingle();
+
+      print("STATION DATA FROM DB: $response");
 
       if (!mounted) return;
 
@@ -37,16 +48,19 @@ class _StationMyProfileState extends State<StationMyProfile> {
         isLoading = false;
       });
     } catch (e) {
+      print("ERROR FETCHING STATION: $e");
       if (!mounted) return;
+
       setState(() => isLoading = false);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
+        SnackBar(content: Text("Error loading profile: $e")),
       );
     }
   }
 
-  // 🔹 PROFILE TILE WIDGET
-  Widget infoTile(String title, String value, IconData icon) {
+  // ================= INFO TILE ===================
+  Widget infoTile(String title, String? value, IconData icon) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
@@ -56,31 +70,31 @@ class _StationMyProfileState extends State<StationMyProfile> {
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.grey),
+          Icon(icon, color: Colors.greenAccent),
           const SizedBox(width: 15),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                const SizedBox(height: 4),
+                Text(
+                  value ?? "N/A",
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
+  // ================= UI ===================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,19 +106,18 @@ class _StationMyProfileState extends State<StationMyProfile> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "Station Profile",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
+        title: const Text("Station Profile",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
         centerTitle: true,
       ),
 
-      // 🔹 BODY
+      // BODY
       body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.greenAccent))
+          ? const Center(
+              child: CircularProgressIndicator(color: Colors.greenAccent))
           : stationData == null
               ? const Center(
-                  child: Text("No Station Data Found",
+                  child: Text("❌ No Station Data Found",
                       style: TextStyle(color: Colors.white)))
               : SafeArea(
                   child: SingleChildScrollView(
@@ -117,11 +130,8 @@ class _StationMyProfileState extends State<StationMyProfile> {
                         const CircleAvatar(
                           radius: 45,
                           backgroundColor: Color(0xFF1E1E1E),
-                          child: Icon(
-                            Icons.local_police,
-                            color: Colors.greenAccent,
-                            size: 40,
-                          ),
+                          child: Icon(Icons.local_police,
+                              color: Colors.greenAccent, size: 40),
                         ),
 
                         const SizedBox(height: 12),
@@ -129,28 +139,26 @@ class _StationMyProfileState extends State<StationMyProfile> {
                         Text(
                           stationData!['station_name'] ?? "Police Station",
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold),
                         ),
 
                         const SizedBox(height: 30),
 
                         // DETAILS
-                        infoTile("Station Name", stationData!['station_name'] ?? "N/A",
-                            Icons.local_police),
-                        infoTile("Email Address", stationData!['station_email'] ?? "N/A",
-                            Icons.email),
-                        infoTile("Contact Number",
-                            stationData!['station_contact'] ?? "N/A", Icons.phone),
-                        infoTile("Address", stationData!['station_address'] ?? "N/A",
-                            Icons.location_on),
+                        infoTile("Station Name",
+                            stationData!['station_name'], Icons.local_police),
+                        infoTile("Email",
+                            stationData!['station_email'], Icons.email),
+                        infoTile("Contact",
+                            stationData!['station_contact'], Icons.phone),
+                        infoTile("Address",
+                            stationData!['station_address'], Icons.location_on),
                         infoTile("Latitude",
-                            stationData!['station_lantitude'] ?? "N/A", Icons.my_location),
+                            stationData!['station_lantitude'], Icons.my_location),
                         infoTile("Longitude",
-                            stationData!['station_longitude'] ?? "N/A", Icons.explore),
-     
+                            stationData!['station_longitude'], Icons.explore),
 
                         const SizedBox(height: 30),
 
@@ -160,20 +168,22 @@ class _StationMyProfileState extends State<StationMyProfile> {
                           height: 50,
                           child: ElevatedButton(
                             onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => StationEditProfile(),));
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => StationEditProfile()),
+                              );
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF4CAF50),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30)),
                             ),
-                            child: const Text(
-                              "EDIT PROFILE",
-                              style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold),
-                            ),
+                            child: const Text("EDIT PROFILE",
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold)),
                           ),
                         ),
 
@@ -185,20 +195,23 @@ class _StationMyProfileState extends State<StationMyProfile> {
                           height: 50,
                           child: OutlinedButton(
                             onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => StationChangePassword(),));
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => StationChangePassword()),
+                              );
                             },
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFF4CAF50)),
+                              side:
+                                  const BorderSide(color: Color(0xFF4CAF50)),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30)),
                             ),
-                            child: const Text(
-                              "CHANGE PASSWORD",
-                              style: TextStyle(
-                                  color: Color(0xFF4CAF50),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold),
-                            ),
+                            child: const Text("CHANGE PASSWORD",
+                                style: TextStyle(
+                                    color: Color(0xFF4CAF50),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold)),
                           ),
                         ),
 
