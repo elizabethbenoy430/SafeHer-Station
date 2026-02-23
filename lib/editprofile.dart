@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:station_app/main.dart';
 
 class StationEditProfile extends StatefulWidget {
   const StationEditProfile({super.key});
@@ -14,8 +15,81 @@ class _StationEditProfileState extends State<StationEditProfile> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController contactController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
-  final TextEditingController latitudeController = TextEditingController();
-  final TextEditingController longitudeController = TextEditingController();
+ 
+bool isLoading = true;
+bool isUpdating = false;
+
+@override
+  void initState() {
+    super.initState();
+    loadStationData();
+  }
+
+  Future<void> loadStationData() async {
+    try {
+      final userId = supabase.auth.currentUser!.id;
+
+      final response = await supabase
+          .from('tbl_station')
+          .select()
+          .eq('station_id', userId)
+          .single();
+
+      setState(() {
+        nameController.text = response['station_name'] ?? "";
+        emailController.text = response['station_email'] ?? "";
+        contactController.text = response['station_contact'] ?? "";
+        addressController.text = response['station_address'] ?? "";
+      
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+      debugPrint("Load error: $e");
+    }
+  }
+  Future<void> updateProfile() async {
+  if (!_formKey.currentState!.validate()) return;
+
+  setState(() => isUpdating = true); // 🔥 LOADER START
+
+  try {
+    final userId = supabase.auth.currentUser!.id;
+
+    await supabase.from('tbl_station').update({
+      'station_name': nameController.text.trim(),
+      'station_email': emailController.text.trim(),
+      'station_contact': contactController.text.trim(),
+      'station_address': addressController.text.trim(),
+      
+    }).eq('station_id', userId);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Profile Updated Successfully"),
+        backgroundColor: Color(0xFF4CAF50),
+      ),
+    );
+
+    Navigator.pop(context, true); // ✅ RETURN TRUE TO RELOAD PROFILE
+
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Update Failed: $e"),
+        backgroundColor: Colors.red,
+      ),
+    );
+  } finally {
+    if (mounted) setState(() => isUpdating = false); // 🔥 LOADER STOP
+  }
+}
+
+
+
+
+
+
 
   InputDecoration _inputStyle(String hint, {IconData? icon}) {
     return InputDecoration(
@@ -33,16 +107,10 @@ class _StationEditProfileState extends State<StationEditProfile> {
     );
   }
 
-  void updateProfile() {
-    if (!_formKey.currentState!.validate()) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Profile Updated Successfully"),
-        backgroundColor: Color(0xFF4CAF50),
-      ),
-    );
-  }
+
+
+
 
   @override
   void dispose() {
@@ -50,8 +118,7 @@ class _StationEditProfileState extends State<StationEditProfile> {
     emailController.dispose();
     contactController.dispose();
     addressController.dispose();
-    latitudeController.dispose();
-    longitudeController.dispose();
+   
 
     super.dispose();
   }
@@ -207,43 +274,7 @@ class _StationEditProfileState extends State<StationEditProfile> {
 
                     const SizedBox(height: 18),
 
-                    // LATITUDE
-                    TextFormField(
-                      controller: latitudeController,
-                      style: const TextStyle(color: Colors.white),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: _inputStyle(
-                        "Latitude",
-                        icon: Icons.my_location,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return "Latitude required";
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    // LONGITUDE
-                    TextFormField(
-                      controller: longitudeController,
-                      style: const TextStyle(color: Colors.white),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: _inputStyle("Longitude", icon: Icons.explore),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return "Longitude required";
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 35),
+                    
 
                     // UPDATE BUTTON
                     SizedBox(
