@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:station_app/main.dart';
+import 'package:station_app/myprofile.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class StationEditProfile extends StatefulWidget {
   const StationEditProfile({super.key});
@@ -15,11 +17,12 @@ class _StationEditProfileState extends State<StationEditProfile> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController contactController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
- 
-bool isLoading = true;
-bool isUpdating = false;
 
-@override
+  String oldemail = "";
+  bool isLoading = true;
+  bool isUpdating = false;
+
+  @override
   void initState() {
     super.initState();
     loadStationData();
@@ -40,7 +43,8 @@ bool isUpdating = false;
         emailController.text = response['station_email'] ?? "";
         contactController.text = response['station_contact'] ?? "";
         addressController.text = response['station_address'] ?? "";
-      
+        oldemail = response['station_email'] ?? "";
+
         isLoading = false;
       });
     } catch (e) {
@@ -48,48 +52,67 @@ bool isUpdating = false;
       debugPrint("Load error: $e");
     }
   }
+
   Future<void> updateProfile() async {
-  if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) return;
 
-  setState(() => isUpdating = true); // 🔥 LOADER START
+    setState(() => isUpdating = true);
 
-  try {
-    final userId = supabase.auth.currentUser!.id;
+    try {
+      final user = supabase.auth.currentUser;
+      if (user == null) throw Exception("User not authenticated");
 
-    await supabase.from('tbl_station').update({
-      'station_name': nameController.text.trim(),
-      'station_email': emailController.text.trim(),
-      'station_contact': contactController.text.trim(),
-      'station_address': addressController.text.trim(),
-      
-    }).eq('station_id', userId);
+      final newEmail = emailController.text.trim().toLowerCase();
+      final oldEmail = oldemail.trim().toLowerCase();
+      bool emailChanged = newEmail != oldEmail;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Profile Updated Successfully"),
-        backgroundColor: Color(0xFF4CAF50),
-      ),
-    );
+      // 1. Update Auth Email
+      // Since confirmation is OFF, this will update the email immediately in Supabase Auth
+      if (emailChanged) {
+        await supabase.auth.updateUser(UserAttributes(email: newEmail));
+      }
 
-    Navigator.pop(context, true); // ✅ RETURN TRUE TO RELOAD PROFILE
+      // 2. Update the database table (tbl_station)
+      await supabase
+          .from('tbl_station')
+          .update({
+            'station_name': nameController.text.trim(),
+            'station_email': newEmail,
+            'station_contact': contactController.text.trim(),
+            'station_address': addressController.text.trim(),
+          })
+          .eq('station_id', user.id);
 
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Update Failed: $e"),
-        backgroundColor: Colors.red,
-      ),
-    );
-  } finally {
-    if (mounted) setState(() => isUpdating = false); // 🔥 LOADER STOP
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Profile and Auth Email updated successfully!"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Navigate back or to profile
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const StationMyProfile()),
+      );
+    } catch (e) {
+      debugPrint("Update error: $e");
+      String errorMessage = e is AuthApiException ? e.message : e.toString();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Update Failed: $errorMessage"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => isUpdating = false);
+    }
   }
-}
-
-
-
-
-
-
 
   InputDecoration _inputStyle(String hint, {IconData? icon}) {
     return InputDecoration(
@@ -107,18 +130,12 @@ bool isUpdating = false;
     );
   }
 
-
-
-
-
-
   @override
   void dispose() {
     nameController.dispose();
     emailController.dispose();
     contactController.dispose();
     addressController.dispose();
-   
 
     super.dispose();
   }
@@ -273,8 +290,6 @@ bool isUpdating = false;
                     ),
 
                     const SizedBox(height: 18),
-
-                    
 
                     // UPDATE BUTTON
                     SizedBox(

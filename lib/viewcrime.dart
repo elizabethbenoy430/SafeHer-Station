@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:heif_converter/heif_converter.dart';
+import 'package:station_app/heic.dart'; // Add this
 
 class ViewCrime extends StatefulWidget {
   const ViewCrime({super.key});
@@ -11,7 +14,6 @@ class ViewCrime extends StatefulWidget {
 
 class _ViewCrimeState extends State<ViewCrime> {
   final SupabaseClient supabase = Supabase.instance.client;
-
   List<dynamic> crimeList = [];
   bool isLoading = true;
 
@@ -21,14 +23,9 @@ class _ViewCrimeState extends State<ViewCrime> {
     fetchCrimes();
   }
 
-  // 🔹 FETCH CRIME WITH USER NAME
   Future<void> fetchCrimes() async {
     try {
-      final response = await supabase
-          .from('tbl_crime')
-          .select('*, tbl_user(user_name)') // JOIN
-          .order('crime_id', ascending: false);
-
+      final response = await supabase.from('tbl_crime').select().order('crime_date', ascending: false);
       setState(() {
         crimeList = response;
         isLoading = false;
@@ -39,100 +36,75 @@ class _ViewCrimeState extends State<ViewCrime> {
     }
   }
 
-  // OPEN FILE
   Future<void> openFile(String url) async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      throw 'Could not open file';
+      debugPrint('Could not open file');
     }
   }
 
-  // CRIME CARD UI
   Widget buildCrimeCard(dynamic crime, int index) {
+    String? fileUrl = crime['crime_file'];
+
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1F1C2C), Color(0xFF928DAB)],
+          colors: [Color(0xFF1F1C2C), Color(0xFF3B3654)], // Darker, cleaner gradient
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 6),
-        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
           children: [
-
-            // SL NO
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: Colors.tealAccent,
-              child: Text(
-                "${index + 1}",
-                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // DETAILS
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-
-                  // ✅ USER NAME
-                  Text(
-                    "Reported by: ${crime['tbl_user']?['user_name'] ?? 'Unknown User'}",
-                    style: const TextStyle(
-                      color: Colors.tealAccent,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  // ✅ crime_details
-                  Text(
-                    crime['crime_details'] ?? "No Description",
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  // ✅ crime_date
-                  Text(
-                    "Date: ${crime['crime_date'] ?? 'N/A'}",
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // ✅ crime_file
-                  if (crime['crime_file'] != null && crime['crime_file'] != "")
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.tealAccent,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Colors.tealAccent,
+                  child: Text("${index + 1}", style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        crime['crime_details'] ?? "No Description",
+                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
                       ),
-                      icon: const Icon(Icons.attach_file),
-                      label: const Text("View File"),
-                      onPressed: () => openFile(crime['crime_file']),
-                    )
-                  else
-                    const Text(
-                      "No File Uploaded",
-                      style: TextStyle(color: Colors.white54),
-                    ),
-                ],
-              ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Date: ${crime['crime_date'] ?? 'N/A'}",
+                        style: const TextStyle(color: Colors.white60, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 12),
+            
+            // --- IMAGE PREVIEW SECTION ---
+            if (fileUrl != null && fileUrl.isNotEmpty)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  height: 200,
+                  width: double.infinity,
+                  color: Colors.black26,
+                  child: GestureDetector(
+                    onTap: () => openFile(fileUrl),
+                    child: HeicImage(imageUrl: fileUrl),
+                  ),
+                ),
+              )
+            else
+              const Text("No File Uploaded", style: TextStyle(color: Colors.white38, fontSize: 12)),
           ],
         ),
       ),
@@ -143,30 +115,23 @@ class _ViewCrimeState extends State<ViewCrime> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F),
-
       appBar: AppBar(
         backgroundColor: Colors.black,
+        title: const Text("Crime Records", style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        title: const Text(
-          "Crime List",
-          style: TextStyle(color: Colors.white),
-        ),
       ),
-
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.tealAccent))
           : crimeList.isEmpty
-              ? const Center(
-                  child: Text("No Crime Records Found",
-                      style: TextStyle(color: Colors.white70)),
-                )
+              ? const Center(child: Text("No Records Found", style: TextStyle(color: Colors.white70)))
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: crimeList.length,
-                  itemBuilder: (context, index) {
-                    return buildCrimeCard(crimeList[index], index);
-                  },
+                  itemBuilder: (context, index) => buildCrimeCard(crimeList[index], index),
                 ),
     );
   }
 }
+
+
+

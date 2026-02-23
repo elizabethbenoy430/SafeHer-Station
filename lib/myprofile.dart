@@ -198,7 +198,7 @@ class _StationMyProfileState extends State<StationMyProfile> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (_) => StationChangePassword()),
+                                    builder: (_) => stationchangepassword()),
                               );
                             },
                             style: OutlinedButton.styleFrom(
