@@ -1,7 +1,8 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:station_app/main.dart';
+import 'package:station_app/main.dart'; // Adjust based on your project structure
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'homepage.dart'; // StationHome page
+import 'homepage.dart'; 
 
 class StationLoginPage extends StatefulWidget {
   const StationLoginPage({super.key});
@@ -16,7 +17,9 @@ class _StationLoginPageState extends State<StationLoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isObscure = true;
 
-  Future<void> Login() async {
+  Future<void> login() async {
+    if (!_formKey.currentState!.validate()) return;
+    
     try {
       final response = await supabase.auth.signInWithPassword(
         email: _emailController.text.trim(),
@@ -24,8 +27,6 @@ class _StationLoginPageState extends State<StationLoginPage> {
       );
 
       if (response.session != null) {
-        // Successful login
-        print("Login successful: ${response.session?.user.email}");
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const StationHome()),
@@ -34,7 +35,6 @@ class _StationLoginPageState extends State<StationLoginPage> {
         showError("Login failed - No session created");
       }
     } catch (e) {
-      print("Login error: $e");
       if (e is AuthException) {
         showError(e.message);
       } else {
@@ -42,35 +42,46 @@ class _StationLoginPageState extends State<StationLoginPage> {
       }
     }
   }
-    void showError(String message) {
+
+  void showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message, style: const TextStyle(color: Colors.white))),
+      SnackBar(
+        backgroundColor: Colors.redAccent,
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+      ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // 🔹 Gradient Background
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF1B1B1B), Color(0xFF000000)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
+          // 1. 🔹 Background Image
+          Positioned.fill(
+            child: Image.asset(
+              "assets/bgl.png",
+              fit: BoxFit.cover,
             ),
           ),
+          
+          // 2. 🔹 Dark Tint Overlay
+          Positioned.fill(
+            child: Container(color: Colors.black.withOpacity(0.6)),
+          ),
 
-          // 🔹 Top Wave Green (like User Login)
+          // 3. 🔹 Semi-Transparent Top Wave
           ClipPath(
             clipper: TopWaveClipper(),
             child: Container(
-              height: 200,
-              decoration: const BoxDecoration(
+              height: 220,
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF4CAF50), Color(0xFF81C784)],
+                  colors: [
+                    const Color(0xFF4CAF50).withOpacity(0.7),
+                    const Color(0xFF81C784).withOpacity(0.4)
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -78,148 +89,89 @@ class _StationLoginPageState extends State<StationLoginPage> {
             ),
           ),
 
-          // 🔹 Login Form Card
+          // 4. 🔹 Glassmorphic Login Form
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 25),
                 child: Column(
                   children: [
-                    const SizedBox(height: 80),
-                    const Icon(Icons.shield, color: Colors.white, size: 80),
+                    const SizedBox(height: 40),
+                    // Shield Icon with Glow
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.greenAccent.withOpacity(0.2),
+                            blurRadius: 40,
+                            spreadRadius: 10,
+                          )
+                        ],
+                      ),
+                      child: const Icon(Icons.shield_outlined, color: Colors.white, size: 90),
+                    ),
                     const SizedBox(height: 20),
                     const Text(
-                      "Welcome Station Officer",
+                      "OFFICER LOGIN",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2,
                       ),
                     ),
-                    const SizedBox(height: 10),
                     const Text(
-                      "Manage alerts, complaints & safety efficiently",
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                      textAlign: TextAlign.center,
+                      "Authorized Personnel Only",
+                      style: TextStyle(color: Colors.white54, fontSize: 13, letterSpacing: 1),
                     ),
                     const SizedBox(height: 40),
 
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E1E1E),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.6),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
+                    // --- GLASS CARD ---
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(30),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                        child: Container(
+                          padding: const EdgeInsets.all(25),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.07),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(color: Colors.white.withOpacity(0.1)),
                           ),
-                        ],
-                      ),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            // Email
-                            TextFormField(
-                              controller: _emailController,
-                              style: const TextStyle(color: Colors.white),
-                              decoration: InputDecoration(
-                                labelText: "Email",
-                                labelStyle: const TextStyle(color: Colors.grey),
-                                prefixIcon:
-                                    const Icon(Icons.email, color: Colors.grey),
-                                filled: true,
-                                fillColor: const Color(0xFF2A2A2A),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              children: [
+                                _buildTextField(
+                                  controller: _emailController,
+                                  label: "Station Email",
+                                  icon: Icons.badge_outlined,
+                                  validator: (v) => v!.isEmpty ? "Required" : null,
                                 ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your email';
-                                }
-                                if (!value.contains('@')) {
-                                  return 'Enter a valid email';
-                                }
-                                return null;
-                              },
+                                const SizedBox(height: 20),
+                                _buildTextField(
+                                  controller: _passwordController,
+                                  label: "Access Code",
+                                  icon: Icons.lock_open_rounded,
+                                  isPassword: true,
+                                  validator: (v) => v!.length < 6 ? "Invalid Code" : null,
+                                ),
+                                const SizedBox(height: 30),
+                                
+                                // 🔴 Glowing Login Button
+                                AnimatedGlowButton(onTap: login),
+                              ],
                             ),
-                            const SizedBox(height: 20),
-
-                            // Password
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: _isObscure,
-                              style: const TextStyle(color: Colors.white),
-                              decoration: InputDecoration(
-                                labelText: "Password",
-                                labelStyle: const TextStyle(color: Colors.grey),
-                                prefixIcon:
-                                    const Icon(Icons.lock, color: Colors.grey),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _isObscure
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                    color: Colors.grey,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _isObscure = !_isObscure;
-                                    });
-                                  },
-                                ),
-                                filled: true,
-                                fillColor: const Color(0xFF2A2A2A),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your password';
-                                }
-                                if (value.length < 6) {
-                                  return 'Password must be at least 6 characters';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 15),
-
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: () {},
-                                child: const Text(
-                                  "Forgot Password?",
-                                  style: TextStyle(color: Colors.grey),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-
-                            // 🔴 Glowing Login Button
-                            AnimatedGlowButton(onTap: Login),
-                          ],
+                          ),
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: 30),
-
-                    // Optional: Social login buttons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        socialButton(Icons.facebook, Colors.blue),
-                        const SizedBox(width: 20),
-                        socialButton(Icons.g_mobiledata, Colors.red),
-                      ],
+                    
+                    const SizedBox(height: 40),
+                    const Text(
+                      "Emergency Response & Monitoring System",
+                      style: TextStyle(color: Colors.white24, fontSize: 11),
                     ),
                   ],
                 ),
@@ -231,28 +183,44 @@ class _StationLoginPageState extends State<StationLoginPage> {
     );
   }
 
-  Widget socialButton(IconData icon, Color color) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.5),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: IconButton(
-        icon: Icon(icon, color: Colors.white),
-        onPressed: () {},
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool isPassword = false,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: isPassword ? _isObscure : false,
+      style: const TextStyle(color: Colors.white),
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white60, fontSize: 14),
+        prefixIcon: Icon(icon, color: Colors.greenAccent.withOpacity(0.7), size: 20),
+        suffixIcon: isPassword 
+          ? IconButton(
+              icon: Icon(_isObscure ? Icons.visibility_off : Icons.visibility, color: Colors.white38),
+              onPressed: () => setState(() => _isObscure = !_isObscure),
+            ) 
+          : null,
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.05),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: const BorderSide(color: Colors.greenAccent, width: 1),
+        ),
       ),
     );
   }
 }
 
-// 🔴 Glowing Login Button
+// 🔴 Glowing Login Button (Design Update)
 class AnimatedGlowButton extends StatefulWidget {
   final VoidCallback onTap;
   const AnimatedGlowButton({required this.onTap, super.key});
@@ -271,10 +239,10 @@ class _AnimatedGlowButtonState extends State<AnimatedGlowButton>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1),
+      duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
 
-    _animation = Tween<double>(begin: 0, end: 12).animate(
+    _animation = Tween<double>(begin: 5, end: 20).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
@@ -291,32 +259,29 @@ class _AnimatedGlowButtonState extends State<AnimatedGlowButton>
       animation: _animation,
       builder: (context, child) {
         return Container(
+          width: double.infinity,
+          height: 55,
           decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF4CAF50).withOpacity(0.6),
+                color: const Color(0xFF4CAF50).withOpacity(0.3),
                 blurRadius: _animation.value,
-                spreadRadius: _animation.value / 2,
+                spreadRadius: 2,
               ),
             ],
           ),
           child: ElevatedButton(
             onPressed: widget.onTap,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4CAF50),
-              padding:
-                  const EdgeInsets.symmetric(vertical: 18, horizontal: 120),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              backgroundColor: const Color(0xFF4CAF50).withOpacity(0.9),
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              elevation: 0,
             ),
             child: const Text(
-              "Login",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
+              "AUTHENTICATE",
+              style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5),
             ),
           ),
         );
@@ -330,14 +295,13 @@ class TopWaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     Path path = Path();
-    path.lineTo(0, size.height - 50);
+    path.lineTo(0, size.height - 60);
     path.quadraticBezierTo(
-        size.width / 2, size.height + 50, size.width, size.height - 50);
+        size.width / 2, size.height + 40, size.width, size.height - 60);
     path.lineTo(size.width, 0);
     path.close();
     return path;
   }
-
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
