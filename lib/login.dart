@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:station_app/main.dart'; // Adjust based on your project structure
+import 'package:station_app/main.dart';
+import 'package:station_app/stationregistration.dart'; 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'homepage.dart'; 
+import 'stationregistration.dart'; // ✅ Ensure this points to your registration file
 
 class StationLoginPage extends StatefulWidget {
   const StationLoginPage({super.key});
@@ -16,9 +18,12 @@ class _StationLoginPageState extends State<StationLoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isObscure = true;
+  bool _isLoading = false;
 
   Future<void> login() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    setState(() => _isLoading = true);
     
     try {
       final response = await supabase.auth.signInWithPassword(
@@ -27,10 +32,12 @@ class _StationLoginPageState extends State<StationLoginPage> {
       );
 
       if (response.session != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const StationHome()),
-        );
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const StationHome()),
+          );
+        }
       } else {
         showError("Login failed - No session created");
       }
@@ -40,6 +47,8 @@ class _StationLoginPageState extends State<StationLoginPage> {
       } else {
         showError("An unexpected error occurred.");
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -68,7 +77,7 @@ class _StationLoginPageState extends State<StationLoginPage> {
           
           // 2. 🔹 Dark Tint Overlay
           Positioned.fill(
-            child: Container(color: Colors.black.withOpacity(0.6)),
+            child: Container(color: Colors.black.withOpacity(0.7)),
           ),
 
           // 3. 🔹 Semi-Transparent Top Wave
@@ -96,7 +105,7 @@ class _StationLoginPageState extends State<StationLoginPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 25),
                 child: Column(
                   children: [
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 20),
                     // Shield Icon with Glow
                     Container(
                       decoration: BoxDecoration(
@@ -109,23 +118,23 @@ class _StationLoginPageState extends State<StationLoginPage> {
                           )
                         ],
                       ),
-                      child: const Icon(Icons.shield_outlined, color: Colors.white, size: 90),
+                      child: const Icon(Icons.shield_outlined, color: Colors.white, size: 80),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 15),
                     const Text(
                       "OFFICER LOGIN",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 28,
+                        fontSize: 26,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 2,
                       ),
                     ),
                     const Text(
                       "Authorized Personnel Only",
-                      style: TextStyle(color: Colors.white54, fontSize: 13, letterSpacing: 1),
+                      style: TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 1),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 35),
 
                     // --- GLASS CARD ---
                     ClipRRect(
@@ -160,7 +169,37 @@ class _StationLoginPageState extends State<StationLoginPage> {
                                 const SizedBox(height: 30),
                                 
                                 // 🔴 Glowing Login Button
-                                AnimatedGlowButton(onTap: login),
+                                _isLoading 
+                                  ? const CircularProgressIndicator(color: Colors.greenAccent)
+                                  : AnimatedGlowButton(onTap: login),
+
+                                const SizedBox(height: 20),
+
+                                // ✅ REDIRECT TO REGISTRATION
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const StationRegistration()),
+                                    );
+                                  },
+                                  child: RichText(
+                                    text: TextSpan(
+                                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                                      children: [
+                                        const TextSpan(text: "Don't have an account? "),
+                                        TextSpan(
+                                          text: "Create One",
+                                          style: TextStyle(
+                                            color: Colors.greenAccent.withOpacity(0.9),
+                                            fontWeight: FontWeight.bold,
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -220,7 +259,7 @@ class _StationLoginPageState extends State<StationLoginPage> {
   }
 }
 
-// 🔴 Glowing Login Button (Design Update)
+// 🔴 Glowing Login Button
 class AnimatedGlowButton extends StatefulWidget {
   final VoidCallback onTap;
   const AnimatedGlowButton({required this.onTap, super.key});
@@ -281,7 +320,7 @@ class _AnimatedGlowButtonState extends State<AnimatedGlowButton>
             ),
             child: const Text(
               "AUTHENTICATE",
-              style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5),
+              style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5),
             ),
           ),
         );

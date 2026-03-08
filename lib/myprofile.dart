@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:station_app/changepassword.dart';
 import 'package:station_app/editprofile.dart';
@@ -21,25 +22,16 @@ class _StationMyProfileState extends State<StationMyProfile> {
     fetchStationDetails();
   }
 
-  // ================= FETCH STATION DATA ===================
   Future<void> fetchStationDetails() async {
     try {
       final user = supabase.auth.currentUser;
-
-      print("LOGGED USER ID: ${user?.id}");
-
-      if (user == null) {
-        print("❌ User not logged in");
-        return;
-      }
+      if (user == null) return;
 
       final response = await supabase
           .from('tbl_station')
           .select()
-          .eq('station_id', user.id) // MUST match DB
+          .eq('station_id', user.id)
           .maybeSingle();
-
-      print("STATION DATA FROM DB: $response");
 
       if (!mounted) return;
 
@@ -48,178 +40,187 @@ class _StationMyProfileState extends State<StationMyProfile> {
         isLoading = false;
       });
     } catch (e) {
-      print("ERROR FETCHING STATION: $e");
       if (!mounted) return;
-
       setState(() => isLoading = false);
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error loading profile: $e")),
       );
     }
   }
 
-  // ================= INFO TILE ===================
+  // ✅ GLASS INFO TILE
   Widget infoTile(String title, String? value, IconData icon) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.greenAccent),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.07),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
+            child: Row(
               children: [
-                Text(title,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                const SizedBox(height: 4),
-                Text(
-                  value ?? "N/A",
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.greenAccent.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: Colors.greenAccent, size: 20),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11, letterSpacing: 1)),
+                      const SizedBox(height: 2),
+                      Text(
+                        value ?? "Not Set",
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  // ================= UI ===================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text("Station Profile",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
+      body: Stack(
+        children: [
+          // 1. 🔹 BACKGROUND
+          Positioned.fill(
+            child: Image.asset("assets/bgl.png", fit: BoxFit.cover),
+          ),
+          Positioned.fill(
+            child: Container(color: Colors.black.withOpacity(0.7)),
+          ),
 
-      // BODY
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Colors.greenAccent))
-          : stationData == null
-              ? const Center(
-                  child: Text("❌ No Station Data Found",
-                      style: TextStyle(color: Colors.white)))
-              : SafeArea(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 30),
+          // 2. 🔹 CONTENT
+          isLoading
+              ? const Center(child: CircularProgressIndicator(color: Colors.greenAccent))
+              : stationData == null
+                  ? const Center(child: Text("❌ No Data Found", style: TextStyle(color: Colors.white)))
+                  : SafeArea(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 20),
 
-                        // PROFILE ICON
-                        const CircleAvatar(
-                          radius: 45,
-                          backgroundColor: Color(0xFF1E1E1E),
-                          child: Icon(Icons.local_police,
-                              color: Colors.greenAccent, size: 40),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        Text(
-                          stationData!['station_name'] ?? "Police Station",
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold),
-                        ),
-
-                        const SizedBox(height: 30),
-
-                        // DETAILS
-                        infoTile("Station Name",
-                            stationData!['station_name'], Icons.local_police),
-                        infoTile("Email",
-                            stationData!['station_email'], Icons.email),
-                        infoTile("Contact",
-                            stationData!['station_contact'], Icons.phone),
-                        infoTile("Address",
-                            stationData!['station_address'], Icons.location_on),
-                        infoTile("Latitude",
-                            stationData!['station_lantitude'], Icons.my_location),
-                        infoTile("Longitude",
-                            stationData!['station_longitude'], Icons.explore),
-
-                        const SizedBox(height: 30),
-
-                        // EDIT PROFILE BUTTON
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => StationEditProfile()),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF4CAF50),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30)),
+                            // PROFILE HEADER
+                            Center(
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.greenAccent.withOpacity(0.5), width: 2),
+                                    ),
+                                    child: const CircleAvatar(
+                                      radius: 50,
+                                      backgroundColor: Colors.black45,
+                                      child: Icon(Icons.shield_rounded, color: Colors.greenAccent, size: 50),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            child: const Text("EDIT PROFILE",
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-
-                        const SizedBox(height: 15),
-
-                        // CHANGE PASSWORD BUTTON
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: OutlinedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => stationchangepassword()),
-                              );
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side:
-                                  const BorderSide(color: Color(0xFF4CAF50)),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30)),
+                            const SizedBox(height: 15),
+                            Text(
+                              stationData!['station_name']?.toUpperCase() ?? "POLICE STATION",
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  letterSpacing: 1.5,
+                                  fontWeight: FontWeight.w900),
                             ),
-                            child: const Text("CHANGE PASSWORD",
-                                style: TextStyle(
-                                    color: Color(0xFF4CAF50),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold)),
-                          ),
-                        ),
+                            const Text(
+                              "AUTHORIZED STATION PROFILE",
+                              style: TextStyle(color: Colors.greenAccent, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
 
-                        const SizedBox(height: 25),
-                      ],
+                            const SizedBox(height: 40),
+
+                            // DETAILS TILES
+                            infoTile("OFFICIAL NAME", stationData!['station_name'], Icons.badge_outlined),
+                            infoTile("EMAIL ADDRESS", stationData!['station_email'], Icons.alternate_email),
+                            infoTile("CONTACT LINE", stationData!['station_contact'], Icons.phone_in_talk_outlined),
+                            infoTile("LOCATION", stationData!['station_address'], Icons.map_outlined),
+                            
+                            // Coordinates Row
+                            Row(
+                              children: [
+                                Expanded(child: infoTile("LAT", stationData!['station_lantitude'], Icons.location_on)),
+                                const SizedBox(width: 10),
+                                Expanded(child: infoTile("LONG", stationData!['station_longitude'], Icons.explore)),
+                              ],
+                            ),
+
+                            const SizedBox(height: 30),
+
+                            // BUTTONS
+                            ElevatedButton(
+                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StationEditProfile())),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.greenAccent,
+                                foregroundColor: Colors.black,
+                                minimumSize: const Size(double.infinity, 55),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                elevation: 0,
+                              ),
+                              child: const Text("EDIT STATION DETAILS", style: TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+
+                            const SizedBox(height: 15),
+
+                            OutlinedButton(
+                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StationChangePassword())),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Colors.white24),
+                                minimumSize: const Size(double.infinity, 55),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                              ),
+                              child: const Text("CHANGE PASSWORD", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            ),
+                            
+                            const SizedBox(height: 40),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+        ],
+      ),
     );
   }
 }

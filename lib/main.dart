@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:station_app/homepage.dart';
 
 import 'package:station_app/login.dart';
+import 'package:station_app/myprofile.dart';
 import 'package:station_app/stationregistration.dart';
 import 'package:station_app/viewcrime.dart';
 
