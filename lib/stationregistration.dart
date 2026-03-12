@@ -56,45 +56,55 @@ class _StationRegistrationState extends State<StationRegistration> {
   }
 
   // ✅ REGISTRATION LOGIC
-  Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
+ Future<void> _register() async {
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+  setState(() => _isLoading = true);
 
-    try {
-      final email = emailController.text.trim();
-      final password = passwordController.text.trim();
+  try {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
 
-      final AuthResponse res = await supabase.auth.signUp(
-        email: email,
-        password: password,
-      );
+    // 🔹 Create auth user
+    final AuthResponse res = await supabase.auth.signUp(
+      email: email,
+      password: password,
+    );
 
-      if (res.user == null) throw "Registration failed";
-
-      await supabase.from('tbl_station').insert({
-        'station_id': res.user!.id,
-        'station_name': nameController.text.trim(),
-        'station_email': email,
-        'station_contact': contactController.text.trim(),
-        'station_password': password,
-        'station_address': addressController.text.trim(),
-        'station_lantitude': latitudeController.text.trim(),
-        'station_longitude': longitudeController.text.trim(),
-        'station_status': 'pending',
-      });
-
-      if (mounted) _showSuccessDialog();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.redAccent),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    if (res.user == null) {
+      throw "Registration failed";
     }
+
+    // 🔹 Insert station details
+    await supabase.from('tbl_station').insert({
+      'station_id': res.user!.id,
+      'station_name': nameController.text.trim(),
+      'station_email': email,
+      'station_contact': contactController.text.trim(),
+      'station_address': addressController.text.trim(),
+      'station_lantitude': latitudeController.text.trim(),
+      'station_longitude': longitudeController.text.trim(),
+      'station_password': passwordController.text.trim(),
+      'station_status': 'pending',
+    });
+
+    if (mounted) {
+      _showSuccessDialog();
+    }
+
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  } finally {
+    if (mounted) setState(() => _isLoading = false);
   }
+}
 
   // ✅ SUCCESS DIALOG
   void _showSuccessDialog() {

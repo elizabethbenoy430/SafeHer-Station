@@ -1,13 +1,49 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:station_app/myprofile.dart';
+import 'package:station_app/statistics.dart';
 import 'package:station_app/viewcrime.dart';
 import 'package:station_app/login.dart';
+import 'package:station_app/viewsosactivity.dart';
 
-class StationHome extends StatelessWidget {
+class StationHome extends StatefulWidget {
   const StationHome({super.key});
 
-  // ✅ UPDATED GLASS FEATURE CARD
+  @override
+  State<StationHome> createState() => _StationHomeState();
+}
+
+class _StationHomeState extends State<StationHome> {
+  int totalSOS = 0;
+  int totalCrimes = 0;
+  bool loading = true;
+
+  final supabase = Supabase.instance.client;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCounts();
+  }
+
+  Future<void> _fetchCounts() async {
+    try {
+      final sos = await supabase.from('tbl_sos').select();
+      final crimes = await supabase.from('tbl_crime').select();
+      
+      setState(() {
+        totalSOS = sos.length;
+        totalCrimes = crimes.length;
+        loading = false;
+      });
+    } catch (e) {
+      print("Error fetching counts: $e");
+      setState(() => loading = false);
+    }
+  }
+
+  // ✅ FEATURE CARD
   Widget featureCard({
     required IconData icon,
     required String title,
@@ -75,6 +111,29 @@ class StationHome extends StatelessWidget {
     );
   }
 
+  Widget _quickStat(String label, int value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(value.toString(),
+                style: TextStyle(
+                    color: color, fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(label,
+                style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,7 +145,8 @@ class StationHome extends StatelessWidget {
         centerTitle: true,
         title: const Text(
           "SafeHer Station",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1),
+          style:
+              TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1),
         ),
         actions: [
           IconButton(
@@ -103,7 +163,7 @@ class StationHome extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          // 1. 🔹 BACKGROUND
+          // 🔹 Background
           Positioned.fill(
             child: Image.asset("assets/bgl.png", fit: BoxFit.cover),
           ),
@@ -111,7 +171,7 @@ class StationHome extends StatelessWidget {
             child: Container(color: Colors.black.withOpacity(0.65)),
           ),
 
-          // 2. 🔹 CONTENT
+          // 🔹 Content
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -129,55 +189,61 @@ class StationHome extends StatelessWidget {
                   ),
                   const Text(
                     "Station active status: Online",
-                    style: TextStyle(color: Colors.greenAccent, fontSize: 14, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                        color: Colors.greenAccent,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500),
                   ),
-                  
                   const SizedBox(height: 30),
-                  
-                  // Quick Stats Row (Optional addition for professional look)
-                  Row(
-                    children: [
-                      _quickStat("Active SOS", "03", Colors.orangeAccent),
-                      const SizedBox(width: 15),
-                      _quickStat("Pending", "12", Colors.blueAccent),
-                    ],
-                  ),
+
+                  // Quick Stats Row
+                  loading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: Colors.greenAccent),
+                        )
+                      : Row(
+                          children: [
+                            _quickStat("Total SOS", totalSOS, Colors.orangeAccent),
+                            const SizedBox(width: 15),
+                            _quickStat("Total Crimes", totalCrimes, Colors.redAccent),
+                          ],
+                        ),
 
                   const SizedBox(height: 30),
                   const Text(
                     "CORE MANAGEMENT",
-                    style: TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                    style: TextStyle(
+                        color: Colors.white38,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5),
                   ),
                   const SizedBox(height: 15),
 
                   // FEATURE CARDS
                   featureCard(
                     icon: Icons.notifications_active_outlined,
-                    title: "Incoming SOS Alerts",
-                    subtitle: "Respond to real-time emergencies",
+                    title: "View SOS Alerts",
+                    subtitle: "Review SOS activity",
                     accentColor: Colors.orangeAccent,
-                    onTap: () {}, // Add navigation
-                  ),
-                  featureCard(
-                    icon: Icons.assignment_late_outlined,
-                    title: "Complaints",
-                    subtitle: "Review and assign cases",
-                    accentColor: Colors.blueAccent,
-                    onTap: () {},
+                    onTap: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => const ViewSOSActivity())),
                   ),
                   featureCard(
                     icon: Icons.gavel_rounded,
                     title: "Crime Records",
                     subtitle: "Detailed incident analysis",
                     accentColor: Colors.tealAccent,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ViewCrime())),
+                    onTap: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => const ViewCrime())),
                   ),
                   featureCard(
                     icon: Icons.analytics_outlined,
                     title: "Statistics",
                     subtitle: "Safety trends and data logs",
                     accentColor: Colors.purpleAccent,
-                    onTap: () {},
+                    onTap: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => const Statistics())),
                   ),
                   const SizedBox(height: 30),
                 ],
@@ -187,7 +253,7 @@ class StationHome extends StatelessWidget {
         ],
       ),
 
-      // 🔽 BOTTOM NAVIGATION
+      // Bottom Navigation
       bottomNavigationBar: ClipRRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -198,40 +264,20 @@ class StationHome extends StatelessWidget {
             type: BottomNavigationBarType.fixed,
             elevation: 0,
             onTap: (index) {
-              if (index == 3) {
+              if(index==2)
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const ViewSOSActivity()));
+              else if (index == 3)
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const ViewCrime()));
-              } else if (index == 4) {
+              else if (index == 4)
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const StationMyProfile()));
-              }
             },
             items: const [
               BottomNavigationBarItem(icon: Icon(Icons.grid_view_rounded), label: "Home"),
-              BottomNavigationBarItem(icon: Icon(Icons.bolt), label: "SOS"),
-              BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: "Inbox"),
+              BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: "SOS Activity"),
               BottomNavigationBarItem(icon: Icon(Icons.description_outlined), label: "Records"),
               BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: "Profile"),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _quickStat(String label, String value, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: color.withOpacity(0.2)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(value, style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.bold)),
-            Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-          ],
         ),
       ),
     );

@@ -1,9 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:station_app/main.dart';
-import 'package:station_app/stationregistration.dart'; 
+import 'package:station_app/stationregistration.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'homepage.dart'; 
+import 'homepage.dart';
 import 'stationregistration.dart'; // ✅ Ensure this points to your registration file
 
 class StationLoginPage extends StatefulWidget {
@@ -20,37 +20,76 @@ class _StationLoginPageState extends State<StationLoginPage> {
   bool _isObscure = true;
   bool _isLoading = false;
 
-  Future<void> login() async {
-    if (!_formKey.currentState!.validate()) return;
-    
-    setState(() => _isLoading = true);
-    
-    try {
-      final response = await supabase.auth.signInWithPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+ Future<void> login() async {
+  if (!_formKey.currentState!.validate()) return;
 
-      if (response.session != null) {
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const StationHome()),
-          );
+  setState(() => _isLoading = true);
+
+  try {
+    final response = await supabase.auth.signInWithPassword(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
+
+    final user = response.user;
+
+    if (user != null) {
+
+      final station = await supabase
+          .from('tbl_station')
+          .select()
+          .eq('station_id', user.id)
+          .maybeSingle();
+
+      print("EMAIL: ${_emailController.text}");
+      print("PASSWORD: ${_passwordController.text}");
+
+      if (station != null) {
+
+        // ✅ correct column
+        if (station['station_status'] == "accepted") {
+
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const StationHome(),
+              ),
+            );
+          }
+
+        } else {
+
+          await supabase.auth.signOut();
+          showError("Station not approved yet");
+
         }
+
       } else {
-        showError("Login failed - No session created");
+
+        await supabase.auth.signOut();
+        showError("Station record not found");
+
       }
-    } catch (e) {
-      if (e is AuthException) {
-        showError(e.message);
-      } else {
-        showError("An unexpected error occurred.");
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+
+    } else {
+      showError("Login failed - No session created");
     }
+
+  } on AuthException catch (e) {
+
+    print("AuthException: ${e.message}");
+    showError("Invalid email or password");
+
+  } catch (e) {
+
+    print(e);
+    showError("Unexpected error occurred");
+
+  } finally {
+    if (mounted) setState(() => _isLoading = false);
   }
+}
 
   void showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -69,12 +108,9 @@ class _StationLoginPageState extends State<StationLoginPage> {
         children: [
           // 1. 🔹 Background Image
           Positioned.fill(
-            child: Image.asset(
-              "assets/bgl.png",
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset("assets/bgl.png", fit: BoxFit.cover),
           ),
-          
+
           // 2. 🔹 Dark Tint Overlay
           Positioned.fill(
             child: Container(color: Colors.black.withOpacity(0.7)),
@@ -89,7 +125,7 @@ class _StationLoginPageState extends State<StationLoginPage> {
                 gradient: LinearGradient(
                   colors: [
                     const Color(0xFF4CAF50).withOpacity(0.7),
-                    const Color(0xFF81C784).withOpacity(0.4)
+                    const Color(0xFF81C784).withOpacity(0.4),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -115,10 +151,14 @@ class _StationLoginPageState extends State<StationLoginPage> {
                             color: Colors.greenAccent.withOpacity(0.2),
                             blurRadius: 40,
                             spreadRadius: 10,
-                          )
+                          ),
                         ],
                       ),
-                      child: const Icon(Icons.shield_outlined, color: Colors.white, size: 80),
+                      child: const Icon(
+                        Icons.shield_outlined,
+                        color: Colors.white,
+                        size: 80,
+                      ),
                     ),
                     const SizedBox(height: 15),
                     const Text(
@@ -132,7 +172,11 @@ class _StationLoginPageState extends State<StationLoginPage> {
                     ),
                     const Text(
                       "Authorized Personnel Only",
-                      style: TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 1),
+                      style: TextStyle(
+                        color: Colors.white54,
+                        fontSize: 12,
+                        letterSpacing: 1,
+                      ),
                     ),
                     const SizedBox(height: 35),
 
@@ -146,7 +190,9 @@ class _StationLoginPageState extends State<StationLoginPage> {
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.07),
                             borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: Colors.white.withOpacity(0.1)),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.1),
+                            ),
                           ),
                           child: Form(
                             key: _formKey,
@@ -156,7 +202,8 @@ class _StationLoginPageState extends State<StationLoginPage> {
                                   controller: _emailController,
                                   label: "Station Email",
                                   icon: Icons.badge_outlined,
-                                  validator: (v) => v!.isEmpty ? "Required" : null,
+                                  validator: (v) =>
+                                      v!.isEmpty ? "Required" : null,
                                 ),
                                 const SizedBox(height: 20),
                                 _buildTextField(
@@ -164,14 +211,17 @@ class _StationLoginPageState extends State<StationLoginPage> {
                                   label: "Access Code",
                                   icon: Icons.lock_open_rounded,
                                   isPassword: true,
-                                  validator: (v) => v!.length < 6 ? "Invalid Code" : null,
+                                  validator: (v) =>
+                                      v!.length < 6 ? "Invalid Code" : null,
                                 ),
                                 const SizedBox(height: 30),
-                                
+
                                 // 🔴 Glowing Login Button
-                                _isLoading 
-                                  ? const CircularProgressIndicator(color: Colors.greenAccent)
-                                  : AnimatedGlowButton(onTap: login),
+                                _isLoading
+                                    ? const CircularProgressIndicator(
+                                        color: Colors.greenAccent,
+                                      )
+                                    : AnimatedGlowButton(onTap: login),
 
                                 const SizedBox(height: 20),
 
@@ -180,20 +230,30 @@ class _StationLoginPageState extends State<StationLoginPage> {
                                   onPressed: () {
                                     Navigator.push(
                                       context,
-                                      MaterialPageRoute(builder: (context) => const StationRegistration()),
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const StationRegistration(),
+                                      ),
                                     );
                                   },
                                   child: RichText(
                                     text: TextSpan(
-                                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 14,
+                                      ),
                                       children: [
-                                        const TextSpan(text: "Don't have an account? "),
+                                        const TextSpan(
+                                          text: "Don't have an account? ",
+                                        ),
                                         TextSpan(
                                           text: "Create One",
                                           style: TextStyle(
-                                            color: Colors.greenAccent.withOpacity(0.9),
+                                            color: Colors.greenAccent
+                                                .withOpacity(0.9),
                                             fontWeight: FontWeight.bold,
-                                            decoration: TextDecoration.underline,
+                                            decoration:
+                                                TextDecoration.underline,
                                           ),
                                         ),
                                       ],
@@ -206,7 +266,7 @@ class _StationLoginPageState extends State<StationLoginPage> {
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 40),
                     const Text(
                       "Emergency Response & Monitoring System",
@@ -237,13 +297,20 @@ class _StationLoginPageState extends State<StationLoginPage> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white60, fontSize: 14),
-        prefixIcon: Icon(icon, color: Colors.greenAccent.withOpacity(0.7), size: 20),
-        suffixIcon: isPassword 
-          ? IconButton(
-              icon: Icon(_isObscure ? Icons.visibility_off : Icons.visibility, color: Colors.white38),
-              onPressed: () => setState(() => _isObscure = !_isObscure),
-            ) 
-          : null,
+        prefixIcon: Icon(
+          icon,
+          color: Colors.greenAccent.withOpacity(0.7),
+          size: 20,
+        ),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  _isObscure ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.white38,
+                ),
+                onPressed: () => setState(() => _isObscure = !_isObscure),
+              )
+            : null,
         filled: true,
         fillColor: Colors.white.withOpacity(0.05),
         enabledBorder: OutlineInputBorder(
@@ -281,9 +348,10 @@ class _AnimatedGlowButtonState extends State<AnimatedGlowButton>
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
 
-    _animation = Tween<double>(begin: 5, end: 20).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(
+      begin: 5,
+      end: 20,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -315,7 +383,9 @@ class _AnimatedGlowButtonState extends State<AnimatedGlowButton>
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4CAF50).withOpacity(0.9),
               foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
               elevation: 0,
             ),
             child: const Text(
@@ -336,11 +406,16 @@ class TopWaveClipper extends CustomClipper<Path> {
     Path path = Path();
     path.lineTo(0, size.height - 60);
     path.quadraticBezierTo(
-        size.width / 2, size.height + 40, size.width, size.height - 60);
+      size.width / 2,
+      size.height + 40,
+      size.width,
+      size.height - 60,
+    );
     path.lineTo(size.width, 0);
     path.close();
     return path;
   }
+
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
