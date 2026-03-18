@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:station_app/login.dart'; // Ensure this matches your login file name
 import 'package:station_app/main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 
 class StationRegistration extends StatefulWidget {
   const StationRegistration({super.key});
@@ -19,8 +20,6 @@ class _StationRegistrationState extends State<StationRegistration> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController contactController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
-  final TextEditingController latitudeController = TextEditingController();
-  final TextEditingController longitudeController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   bool _isLoading = false;
@@ -75,6 +74,22 @@ class _StationRegistrationState extends State<StationRegistration> {
       throw "Registration failed";
     }
 
+    // 🔹 Request Location Permissions first
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        throw "Location permissions are denied by the user.";
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      throw "Location permissions are permanently denied. Please enable them in app settings.";
+    }
+
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
     // 🔹 Insert station details
     await supabase.from('tbl_station').insert({
       'station_id': res.user!.id,
@@ -82,8 +97,8 @@ class _StationRegistrationState extends State<StationRegistration> {
       'station_email': email,
       'station_contact': contactController.text.trim(),
       'station_address': addressController.text.trim(),
-      'station_lantitude': latitudeController.text.trim(),
-      'station_longitude': longitudeController.text.trim(),
+      'station_lantitude': position.latitude,
+      'station_longitude': position.longitude,
       'station_password': passwordController.text.trim(),
       'station_status': 'pending',
     });
@@ -93,6 +108,7 @@ class _StationRegistrationState extends State<StationRegistration> {
     }
 
   } catch (e) {
+    print("Registration error: $e");
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -159,8 +175,6 @@ class _StationRegistrationState extends State<StationRegistration> {
     emailController.dispose();
     contactController.dispose();
     addressController.dispose();
-    latitudeController.dispose();
-    longitudeController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -241,38 +255,13 @@ class _StationRegistrationState extends State<StationRegistration> {
                                 validator: (v) => v!.length != 10 ? "10 digits required" : null,
                               ),
                               const SizedBox(height: 15),
+                              const SizedBox(height: 15),
                               TextFormField(
                                 controller: addressController,
                                 style: const TextStyle(color: Colors.white),
                                 maxLines: 2,
                                 decoration: _glassInputStyle("Station Address", Icons.map_outlined),
                                 validator: (v) => v!.isEmpty ? "Required" : null,
-                              ),
-                              const SizedBox(height: 15),
-                              
-                              // Location Row (Side-by-Side)
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: latitudeController,
-                                      style: const TextStyle(color: Colors.white),
-                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                      decoration: _glassInputStyle("Latitude", Icons.location_on_outlined),
-                                      validator: (v) => v!.isEmpty ? "Req" : null,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: longitudeController,
-                                      style: const TextStyle(color: Colors.white),
-                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                      decoration: _glassInputStyle("Longitude", Icons.explore_outlined),
-                                      validator: (v) => v!.isEmpty ? "Req" : null,
-                                    ),
-                                  ),
-                                ],
                               ),
                               const SizedBox(height: 15),
                               TextFormField(

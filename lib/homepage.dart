@@ -237,14 +237,7 @@ class _StationHomeState extends State<StationHome> {
                     onTap: () => Navigator.push(context,
                         MaterialPageRoute(builder: (context) => const ViewCrime())),
                   ),
-                  featureCard(
-                    icon: Icons.analytics_outlined,
-                    title: "Statistics",
-                    subtitle: "Safety trends and data logs",
-                    accentColor: Colors.purpleAccent,
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => const Statistics())),
-                  ),
+                  
                   const SizedBox(height: 30),
                 ],
               ),

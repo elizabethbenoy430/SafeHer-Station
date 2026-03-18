@@ -5,6 +5,7 @@ import 'package:station_app/stationregistration.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'homepage.dart';
 import 'stationregistration.dart'; // ✅ Ensure this points to your registration file
+import 'package:geolocator/geolocator.dart';
 
 class StationLoginPage extends StatefulWidget {
   const StationLoginPage({super.key});
@@ -19,6 +20,19 @@ class _StationLoginPageState extends State<StationLoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isObscure = true;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _requestLocationPermission();
+  }
+
+  Future<void> _requestLocationPermission() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      await Geolocator.requestPermission();
+    }
+  }
 
  Future<void> login() async {
   if (!_formKey.currentState!.validate()) return;
